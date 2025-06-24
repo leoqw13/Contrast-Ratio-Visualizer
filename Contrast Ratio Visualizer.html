@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrast Ratio Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Caveat:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #A82424;
+            --secondary: #be6e5a;
+            --accent: #a8dadc;
+            --background: #F0F4F8;
+            --card-bg: #FFFFFF;
+            --text: #2D3436;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--background), #D6EAF8);
+            font-family: 'Poppins', sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 3px double var(--accent);
+        }
+
+        .card {
+            position: relative;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 12px 24px rgba(168, 36, 36, 0.3), 0 6px 12px rgba(190, 110, 90, 0.2);
+            padding: 2rem;
+            overflow: visible;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 12px 24px rgba(168, 36, 36, 0.5), 0 6px 12px rgba(190, 110, 90, 0.4), 0 0 16px rgba(168, 36, 36, 0.3);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 18px;
+            background: linear-gradient(125deg, var(--primary), var(--accent));
+            z-index: -1;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            font-family: 'Caveat', cursive;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .input-group .input-icon i {
+            position: absolute;
+            left: 12px;
+            top: 70%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        .input-group:hover .input-icon i {
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .input-group input[type="text"] {
+            padding-left: 2.5rem;
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+            width: 100%;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .input-group input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(168, 36, 36, 0.2);
+            outline: none;
+            transform: scale(1.02);
+        }
+
+        .input-group input[type="text"].invalid {
+            animation: shake 0.3s ease;
+            border-color: #EF4444;
+        }
+
+        .swatch-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-left: 0.75rem;
+        }
+
+        .color-swatch {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            vertical-align: middle;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.2), inset 0 0 4px rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            background-color: #000000;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 12px rgba(168, 36, 36, 0.5);
+            border-color: var(--secondary);
+        }
+
+        input[type="color"] {
+            position: absolute;
+            width: 0;
+            height: 0;
+            opacity: 0;
+            z-index: -1;
+            left: 0;
+            top: 0;
+        }
+
+        .copy-btn {
+            width: 48px;
+            height: 48px;
+            color: var(--primary);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-left: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+            position: relative;
+        }
+
+        .copy-btn i {
+            font-size: 1.25rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 12px rgba(168, 36, 36, 0.5);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .copy-btn:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'Poppins', sans-serif;
+            white-space: nowrap;
+            opacity: 1;
+            transition: opacity 0.2s ease;
+            margin-bottom: 0.5rem;
+            z-index: 20;
+        }
+
+        .copy-btn::after {
+            opacity: 0;
+        }
+
+        .preview-box {
+            width: 100%;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            border: 3px double var(--accent);
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            transition: border-color 0.3s ease, transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-box.pass {
+            border-color: var(--secondary);
+            animation: rotateBorder 2s linear infinite;
+        }
+
+        .preview-box.fail {
+            border-color: #EF4444;
+        }
+
+        .preview-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+            pointer-events: none;
+        }
+
+        .results {
+            background: linear-gradient(to bottom, #F9FAFB, #EDF2F7);
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .custom {
+            max-width: 36rem;
+            animation: bounceIn 0.8s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes rotateBorder {
+            0% {
+                border-color: var(--secondary);
+            }
+
+            50% {
+                border-color: var(--accent);
+            }
+
+            100% {
+                border-color: var(--secondary);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-5px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        @media (max-width: 640px) {
+
+            .color-swatch,
+            .copy-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .copy-btn i {
+                font-size: 1rem;
+            }
+
+            .preview-box {
+                height: 120px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-gray-800">
+    <!-- Header -->
+    <header class="header w-full">
+        <i class="fas fa-palette text-2xl"></i>
+        <h1 class="text-2xl font-bold">Contrast Ratio Visualizer</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="mx-auto p-6 custom">
+        <div class="card">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"
+                style="font-family: 'Caveat', cursive;">
+                <i class="fas fa-paint-roller text-[var(--primary)]"></i> Mix Your Colors!
+            </h2>
+
+            <!-- Color Inputs -->
+            <div class="input-group">
+                <label for="textColor">Text Color (Hex)</label>
+                <span class="input-icon"><i class="fas fa-font"></i></span>
+                <div class="flex items-center">
+                    <input id="textColor" type="text" placeholder="#000000" class="w-full" value="#000000">
+                    <div class="swatch-wrapper">
+                        <div class="color-swatch" id="textColorSwatch" style="background-color: #000000;"></div>
+                        <input id="textColorPicker" type="color" value="#000000">
+                    </div>
+                    <button class="copy-btn" onclick="copyToClipboard('textColor')"
+                        aria-label="Copy text color to clipboard" data-tooltip="Copy color to clipboard">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="bgColor">Background Color (Hex)</label>
+                <span class="input-icon"><i class="fas fa-fill-drip"></i></span>
+                <div class="flex items-center">
+                    <input id="bgColor" type="text" placeholder="#FFFFFF" class="w-full" value="#FFFFFF">
+                    <div class="swatch-wrapper">
+                        <div class="color-swatch" id="bgColorSwatch" style="background-color: #FFFFFF;"></div>
+                        <input id="bgColorPicker" type="color" value="#FFFFFF">
+                    </div>
+                    <button class="copy-btn" onclick="copyToClipboard('bgColor')"
+                        aria-label="Copy background color to clipboard" data-tooltip="Copy color to clipboard">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Box -->
+            <div class="mb-6">
+                <div id="preview" class="preview-box pass" style="color: #000000; background-color: #FFFFFF;">
+                    Sample Text
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div id="results" class="results">
+                <p><strong>Contrast Ratio:</strong> <span id="contrastRatio">21.00</span></p>
+                <p><strong>Normal Text:</strong></p>
+                <p>AA (4.5:1): <span id="normalAA" class="font-semibold text-green-600">Pass</span></p>
+                <p>AAA (7:1): <span id="normalAAA" class="font-semibold text-green-600">Pass</span></p>
+                <p><strong>Large Text:</strong></p>
+                <p>AA (3:1): <span id="largeAA" class="font-semibold text-green-600">Pass</span></p>
+                <p>AAA (4.5:1): <span id="largeAAA" class="font-semibold text-green-600">Pass</span></p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function parseColor(input) {
+            input = input.trim();
+            if (!input.startsWith('#') || (input.length !== 4 && input.length !== 7)) {
+                return null;
+            }
+            let hex = input.replace('#', '');
+            if (hex.length === 3) {
+                hex = hex.split('').map(c => c + c).join('');
+            }
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return { r, g, b };
+        }
+
+        function rgbToHex(r, g, b) {
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+        }
+
+        function rgbObjectToHex({ r, g, b }) {
+            return rgbToHex(r, g, b);
+        }
+
+        function getLuminance({ r, g, b }) {
+            const a = [r, g, b].map(v => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+        }
+
+        function calculateContrastRatio(l1, l2) {
+            return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+        }
+
+        function copyToClipboard(inputId) {
+            const input = document.getElementById(inputId);
+            navigator.clipboard.writeText(input.value).then(() => {
+                alert('Color copied to clipboard!');
+            });
+        }
+
+        function updateUI() {
+            const textColorInput = document.getElementById('textColor');
+            const bgColorInput = document.getElementById('bgColor');
+            const textColorPicker = document.getElementById('textColorPicker');
+            const bgColorPicker = document.getElementById('bgColorPicker');
+            const textColorSwatch = document.getElementById('textColorSwatch');
+            const bgColorSwatch = document.getElementById('bgColorSwatch');
+            const preview = document.getElementById('preview');
+            const results = document.getElementById('results');
+            const textColor = parseColor(textColorInput.value);
+            const bgColor = parseColor(bgColorInput.value);
+
+            textColorInput.classList.toggle('invalid', !textColor);
+            bgColorInput.classList.toggle('invalid', !bgColor);
+
+            if (textColor && bgColor) {
+                results.innerHTML = `
+                    <p><strong>Contrast Ratio:</strong> <span id="contrastRatio"></span></p>
+                    <p><strong>Normal Text:</strong></p>
+                    <p>AA (4.5:1): <span id="normalAA" class="font-semibold"></span></p>
+                    <p>AAA (7:1): <span id="normalAAA" class="font-semibold"></span></p>
+                    <p><strong>Large Text:</strong></p>
+                    <p>AA (3:1): <span id="largeAA" class="font-semibold"></span></p>
+                    <p>AAA (4.5:1): <span id="largeAAA" class="font-semibold"></span></p>
+                `;
+            } else {
+                results.innerHTML = '<p class="text-red-600 font-semibold">Use hex colors like #FFFFFF or #FFF.</p>';
+                return;
+            }
+
+            textColorPicker.value = rgbObjectToHex(textColor);
+            bgColorPicker.value = rgbObjectToHex(bgColor);
+            textColorSwatch.style.backgroundColor = rgbObjectToHex(textColor);
+            bgColorSwatch.style.backgroundColor = rgbObjectToHex(bgColor);
+
+            preview.style.color = `rgb(${textColor.r}, ${textColor.g}, ${textColor.b})`;
+            preview.style.backgroundColor = `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`;
+
+            const textLuminance = getLuminance(textColor);
+            const bgLuminance = getLuminance(bgColor);
+            const contrastRatio = calculateContrastRatio(textLuminance, bgLuminance);
+
+            const normalAA = 4.5;
+            const normalAAA = 7;
+            const largeAA = 3;
+            const largeAAA = 4.5;
+
+            document.getElementById('contrastRatio').textContent = contrastRatio.toFixed(2);
+            document.getElementById('normalAA').textContent = contrastRatio >= normalAA ? 'Pass' : 'Fail';
+            document.getElementById('normalAA').className = contrastRatio >= normalAA ? 'font-semibold text-green-600' : 'font-semibold text-red-600';
+            document.getElementById('normalAAA').textContent = contrastRatio >= normalAAA ? 'Pass' : 'Fail';
+            document.getElementById('normalAAA').className = contrastRatio >= normalAAA ? 'font-semibold text-green-600' : 'font-semibold text-red-600';
+            document.getElementById('largeAA').textContent = contrastRatio >= largeAA ? 'Pass' : 'Fail';
+            document.getElementById('largeAA').className = contrastRatio >= largeAA ? 'font-semibold text-green-600' : 'font-semibold text-red-600';
+            document.getElementById('largeAAA').textContent = contrastRatio >= largeAAA ? 'Pass' : 'Fail';
+            document.getElementById('largeAAA').className = contrastRatio >= largeAAA ? 'font-semibold text-green-600' : 'font-semibold text-red-600';
+
+            preview.className = `preview-box ${contrastRatio >= normalAA ? 'pass' : 'fail'}`;
+        }
+
+        const textColorInput = document.getElementById('textColor');
+        const bgColorInput = document.getElementById('bgColor');
+        const textColorPicker = document.getElementById('textColorPicker');
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        const textColorSwatch = document.getElementById('textColorSwatch');
+        const bgColorSwatch = document.getElementById('bgColorSwatch');
+
+        textColorInput.addEventListener('input', updateUI);
+        bgColorInput.addEventListener('input', updateUI);
+
+        textColorSwatch.addEventListener('click', () => {
+            textColorPicker.click();
+        });
+
+        bgColorSwatch.addEventListener('click', () => {
+            bgColorPicker.click();
+        });
+
+        textColorPicker.addEventListener('input', () => {
+            textColorInput.value = textColorPicker.value.toUpperCase();
+            updateUI();
+        });
+
+        bgColorPicker.addEventListener('input', () => {
+            bgColorInput.value = bgColorPicker.value.toUpperCase();
+            updateUI();
+        });
+
+        updateUI();
+    </script>
+</body>
+
+</html>
